@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CityInfo.API.Models;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,5 +31,24 @@ namespace CityInfo.API.Controllers
 
             return Ok(cityToReturn);
         }
+
+        [HttpPost("{id}")]
+        public IActionResult CreateCity([FromBody] CityForCreationDto city)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var cityToAdd = new CityForCreationDto()
+            {
+                Description = city.Description,
+                Name = city.Name
+            };
+
+            CitiesDataStore.Current.Cities.Add(cityToAdd);
+
+            return NoContent();
+        } 
     }
 }
