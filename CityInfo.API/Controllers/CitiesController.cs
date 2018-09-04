@@ -1,4 +1,6 @@
-﻿using CityInfo.API.Models;
+﻿using AutoMapper;
+using CityInfo.API.Models;
+using CityInfo.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -10,26 +12,53 @@ namespace CityInfo.API.Controllers
     [Route("api/cities")]
     public class CitiesController : Controller
     {
+        private ICityInfoRepository _cityInfoRepository;
+
+        public CitiesController(ICityInfoRepository cityInfoRepository)
+        {
+            _cityInfoRepository = cityInfoRepository;
+        }
+
         [HttpGet()]
         public IActionResult GetCities()
         {
             //return new JsonResult(CitiesDataStore.Current.Cities);
-            var cities = CitiesDataStore.Current.Cities;
-           
-            return Ok(cities);
+            var cityEntities = _cityInfoRepository.GetCities();
+
+            var results = Mapper.Map<IEnumerable<CityWithoutPointsOfInterestDto>>(cityEntities);
+
+            return Ok(results);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetCity(int id)
+        public IActionResult GetCity(int id, bool includePointsOfInterest = false)
         {
-            //return new JsonResult(CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == id));
-            var cityToReturn = CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == id);
-            if (cityToReturn == null)
+            var city = _cityInfoRepository.GetCity(id, includePointsOfInterest);
+
+            if (city == null)
             {
                 return NotFound();
             }
 
-            return Ok(cityToReturn);
+            if (includePointsOfInterest)
+            {
+                var cityResult = Mapper.Map<IEnumerable<CityDto>>(city);
+                return Ok(cityResult);
+            }
+
+            var cityWithoutPointsOfInterestResult = Mapper.Map<IEnumerable<CityWithoutPointsOfInterestDto>>(city);
+            return Ok(cityWithoutPointsOfInterestResult);
+
+            //return new JsonResult(CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == id));
+            //var cityToReturn = CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == id);
+            //if (cityToReturn == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //return Ok(cityToReturn);
+
+
         }
 
         [HttpPost("{id}")]
@@ -46,9 +75,10 @@ namespace CityInfo.API.Controllers
                 Name = city.Name
             };
 
-            CitiesDataStore.Current.Cities.Add(cityToAdd);
+            
 
             return NoContent();
         } 
     }
 }
+ 
